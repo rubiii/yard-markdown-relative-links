@@ -1,5 +1,7 @@
 # yard-relative_markdown_links
 
+[![CI](https://github.com/rubiii/yard-relative_markdown_links/actions/workflows/ci.yml/badge.svg)](https://github.com/rubiii/yard-relative_markdown_links/actions/workflows/ci.yml)
+
 A YARD plugin to convert relative links between Markdown files.
 
 GitHub and YARD render Markdown files differently. In particular, relative links in Markdown files that work in GitHub don't work in YARD. For example, if you have `[hello](FOO.md)` in your README, YARD renders it as `<a href="FOO.md">hello</a>`, creating a broken link in your docs.
