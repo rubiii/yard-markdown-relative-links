@@ -29,6 +29,5 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'nokogiri', '>= 1.14', '< 2'
   spec.add_dependency 'yard', '>= 0.9', '< 1'
 end

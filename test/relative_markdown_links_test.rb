@@ -110,6 +110,18 @@ class RelativeMarkdownLinksTest < Minitest::Test
     refute_includes result, '{file:'
   end
 
+  def test_ignores_links_with_query_string
+    context = TestContext.new(
+      options: MockOptions.new(files: @files)
+    )
+
+    html = '<a href="docs/index.md?tab=overview">Docs</a>'
+    result = context.resolve_links(html)
+
+    assert_includes result, 'href="docs/index.md?tab=overview"'
+    refute_includes result, '{file:'
+  end
+
   def test_ignores_unknown_files
     context = TestContext.new(
       options: MockOptions.new(files: @files)
@@ -169,6 +181,39 @@ class RelativeMarkdownLinksTest < Minitest::Test
     assert_includes result, '{file:docs/configuration.md Config}'
   end
 
+  def test_converts_single_quoted_href
+    context = TestContext.new(
+      options: MockOptions.new(files: @files)
+    )
+
+    html = "<a href='docs/index.md'>Documentation</a>"
+    result = context.resolve_links(html)
+
+    assert_includes result, '{file:docs/index.md Documentation}'
+  end
+
+  def test_preserves_inner_html_in_converted_link
+    context = TestContext.new(
+      options: MockOptions.new(files: @files)
+    )
+
+    html = '<a href="docs/index.md"><code>Documentation</code></a>'
+    result = context.resolve_links(html)
+
+    assert_includes result, '{file:docs/index.md <code>Documentation</code>}'
+  end
+
+  def test_converts_uppercase_anchor_tag
+    context = TestContext.new(
+      options: MockOptions.new(files: @files)
+    )
+
+    html = '<A HREF="docs/index.md">Documentation</A>'
+    result = context.resolve_links(html)
+
+    assert_includes result, '{file:docs/index.md Documentation}'
+  end
+
   def test_returns_unmodified_when_no_files
     options = MockOptions.new(files: [])
     options.instance_variable_set(:@files, nil)
@@ -201,5 +246,16 @@ class RelativeMarkdownLinksTest < Minitest::Test
     result = context.resolve_links(html)
 
     assert_includes result, '{file:docs/configuration.md Config}'
+  end
+
+  def test_leaves_malformed_anchor_html_untouched
+    context = TestContext.new(
+      options: MockOptions.new(files: @files)
+    )
+
+    html = '<a href="docs/index.md">Documentation'
+    result = context.resolve_links(html)
+
+    assert_equal html, result
   end
 end

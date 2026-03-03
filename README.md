@@ -12,6 +12,7 @@ With this plugin enabled, you'll get `<a href="file.FOO.html">hello</a>` instead
 - **Supports files in subdirectories** — links from `docs/index.md` to `getting-started.md` correctly resolve to `docs/getting-started.md`
 - Preserves anchor/fragment links (e.g., `file.md#section`)
 - Falls back to basename matching for simple cases
+- No `Nokogiri` runtime dependency (stdlib-only link rewriting)
 
 ## Installation
 

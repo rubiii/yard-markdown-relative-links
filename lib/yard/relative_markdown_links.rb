@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'nokogiri'
+require 'set'
 require 'uri'
 
 require_relative 'relative_markdown_links/version'
@@ -21,6 +21,20 @@ module YARD
   # the link relative to the current file's directory, finding
   # `docs/getting-started.md` in YARD's file list.
   module RelativeMarkdownLinks
+    ANCHOR_TAG_PATTERN = %r{<a\b(?<attributes>[^>]*)>(?<content>.*?)</a>}im.freeze
+    HREF_ATTRIBUTE_PATTERN = /
+      \bhref
+      \s*=\s*
+      (?:
+        "(?<double>[^"]*)"
+        |
+        '(?<single>[^']*)'
+        |
+        (?<bare>[^\s"'=<>`]+)
+      )
+    /imx.freeze
+    RDOC_FILENAME_PATTERN = %r{\A(?<dirname>(?:[^/#]*/)*+)(?<basename>[^/#]+)\.(?<ext>rb|rdoc|md)\z}i.freeze
+
     # Resolves relative links from Markdown files.
     #
     # @param text [String] the HTML fragment in which to resolve links
@@ -28,33 +42,53 @@ module YARD
     def resolve_links(text)
       return super unless options.files
 
-      html = Nokogiri::HTML.fragment(text)
-      html.css('a[href]').each do |link|
-        process_link(link)
-      end
-
-      super(html.to_s)
+      super(rewrite_anchor_links(text))
     end
 
     private
 
-    # Process a single link element, converting it to YARD file syntax if it matches a known file.
+    # Replace supported HTML anchors with YARD {file:} references when they resolve to known files.
     #
-    # @param link [Nokogiri::XML::Element] the anchor element to process
-    # @return [void]
-    def process_link(link)
-      href = URI(link['href'])
-      return unless href.relative?
-      return if href.path.nil? || href.path.empty?
+    # @param text [String] HTML fragment to rewrite
+    # @return [String]
+    def rewrite_anchor_links(text)
+      text.gsub(ANCHOR_TAG_PATTERN) do |anchor_tag|
+        attributes = Regexp.last_match[:attributes]
+        content = Regexp.last_match[:content]
+        href = extract_href(attributes)
+        file_ref = href && resolve_href(href)
 
-      resolved_path = resolve_file_path(href.path)
-      return unless resolved_path
+        file_ref ? "{file:#{file_ref} #{content}}" : anchor_tag
+      end
+    end
 
-      # Preserve fragment/anchor if present
-      file_ref = resolved_path
-      file_ref = "#{file_ref}##{href.fragment}" if href.fragment
+    # Extract the href attribute value from an <a ...> attribute string.
+    #
+    # @param attributes [String]
+    # @return [String, nil]
+    def extract_href(attributes)
+      match = HREF_ATTRIBUTE_PATTERN.match(attributes)
+      return nil unless match
 
-      link.replace("{file:#{file_ref} #{link.inner_html}}")
+      match[:double] || match[:single] || match[:bare]
+    end
+
+    # Resolve a raw href string into a YARD file reference target.
+    #
+    # @param raw_href [String]
+    # @return [String, nil]
+    def resolve_href(raw_href)
+      href = URI(raw_href)
+      return nil unless href.relative?
+      return nil if href.query
+
+      path = href.path
+      return nil if path.nil? || path.empty?
+
+      resolved_path = resolve_file_path(path)
+      return nil unless resolved_path
+
+      href.fragment ? "#{resolved_path}##{href.fragment}" : resolved_path
     rescue URI::InvalidURIError
       # Skip malformed URIs
       nil
@@ -65,51 +99,65 @@ module YARD
     # @param path [String] the relative path from the link
     # @return [String, nil] the resolved path if found, nil otherwise
     def resolve_file_path(path)
-      # Build lookup structures on first use
-      @filenames ||= options.files.to_set(&:filename)
-      @basename_to_paths ||= build_basename_mapping
-      @rdoc_filenames ||= build_rdoc_filename_mapping
-      @rdoc_basename_to_paths ||= build_rdoc_basename_mapping
+      indexes = file_indexes
 
       # First, try exact match (works for root-level files like docs/index.md from README)
-      return path if @filenames.include?(path)
+      return path if indexes[:filenames].include?(path)
 
       # Try RDoc-style filename mapping (e.g., foo_bar_md.html -> foo_bar.md)
-      rdoc_resolved = @rdoc_filenames[path]
-      return rdoc_resolved if rdoc_resolved && @filenames.include?(rdoc_resolved)
+      rdoc_resolved = indexes[:rdoc_filenames][path]
+      return rdoc_resolved if rdoc_resolved
 
       # Try RDoc-style basename-only matching
-      rdoc_basename_resolved = resolve_rdoc_by_basename(path)
+      rdoc_basename_resolved = resolve_rdoc_by_basename(path, indexes[:rdoc_basename_to_paths])
       return rdoc_basename_resolved if rdoc_basename_resolved
 
       # Try resolving relative to current file's directory
-      resolved = resolve_relative_to_current_file(path)
+      resolved = resolve_relative_to_current_file(path, indexes[:filenames])
       return resolved if resolved
 
       # Fallback: try to find by basename alone (for simple cases)
-      resolve_by_basename(path)
+      resolve_by_basename(path, indexes[:basename_to_paths])
+    end
+
+    # Build and memoize lookup structures for the current options.files list.
+    #
+    # @return [Hash]
+    def file_indexes
+      filenames = options.files.map(&:filename)
+      return @file_indexes if @file_indexes && @file_indexes_filenames == filenames
+
+      @file_indexes_filenames = filenames
+      @file_indexes = {
+        filenames: filenames.to_set,
+        basename_to_paths: build_basename_mapping(filenames),
+        rdoc_filenames: build_rdoc_filename_mapping(filenames),
+        rdoc_basename_to_paths: build_rdoc_basename_mapping(filenames)
+      }
     end
 
     # Resolve a path relative to the current file being processed.
     #
     # @param path [String] the relative path from the link
+    # @param filenames [Set<String>] known filenames
     # @return [String, nil] the resolved path if found, nil otherwise
-    def resolve_relative_to_current_file(path)
+    def resolve_relative_to_current_file(path, filenames)
       current_dir = current_file_directory
       return nil unless current_dir
 
       resolved = File.join(current_dir, path)
       resolved = normalize_path(resolved)
-      resolved if @filenames.include?(resolved)
+      resolved if filenames.include?(resolved)
     end
 
     # Resolve a path by matching its basename against known files.
     #
     # @param path [String] the relative path from the link
+    # @param basename_to_paths [Hash{String => Array<String>}]
     # @return [String, nil] the resolved path if exactly one match, nil otherwise
-    def resolve_by_basename(path)
+    def resolve_by_basename(path, basename_to_paths)
       basename = File.basename(path)
-      candidates = @basename_to_paths[basename]
+      candidates = basename_to_paths[basename]
       candidates.first if candidates&.size == 1
     end
 
@@ -128,12 +176,12 @@ module YARD
 
     # Build a mapping from basename to full paths for fallback resolution.
     #
+    # @param filenames [Array<String>] known filenames
     # @return [Hash{String => Array<String>}] mapping of basenames to full paths
-    def build_basename_mapping
+    def build_basename_mapping(filenames)
       mapping = Hash.new { |h, k| h[k] = [] }
-      options.files.each do |file|
-        basename = File.basename(file.filename)
-        mapping[basename] << file.filename
+      filenames.each do |filename|
+        mapping[File.basename(filename)] << filename
       end
       mapping
     end
@@ -143,12 +191,12 @@ module YARD
     # RDoc generates filenames like `foo_bar_md.html` for `foo_bar.md`.
     # This mapping allows resolving such links back to the original files.
     #
+    # @param filenames [Array<String>] known filenames
     # @return [Hash{String => String}] mapping of RDoc HTML names to original filenames
     # @see https://github.com/ruby/rdoc/blob/0e060c69f51ec4a877e5cde69b31d47eaeb2a2b9/lib/rdoc/markup/to_html.rb#L364-L366
-    def build_rdoc_filename_mapping
-      options.files.filter_map { |file|
-        filename = file.filename
-        match = %r{\A(?<dirname>(?:[^/#]*/)*+)(?<basename>[^/#]+)\.(?<ext>rb|rdoc|md)\z}i.match(filename)
+    def build_rdoc_filename_mapping(filenames)
+      filenames.filter_map { |filename|
+        match = RDOC_FILENAME_PATTERN.match(filename)
         next unless match
 
         rdoc_name = "#{match[:dirname]}#{match[:basename].tr('.', '_')}_#{match[:ext]}.html"
@@ -158,12 +206,12 @@ module YARD
 
     # Build a mapping from RDoc-style basenames to original filenames.
     #
+    # @param filenames [Array<String>] known filenames
     # @return [Hash{String => Array<String>}] mapping of RDoc basenames to original filenames
-    def build_rdoc_basename_mapping
+    def build_rdoc_basename_mapping(filenames)
       mapping = Hash.new { |h, k| h[k] = [] }
-      options.files.each do |file|
-        filename = file.filename
-        match = %r{\A(?<dirname>(?:[^/#]*/)*+)(?<basename>[^/#]+)\.(?<ext>rb|rdoc|md)\z}i.match(filename)
+      filenames.each do |filename|
+        match = RDOC_FILENAME_PATTERN.match(filename)
         next unless match
 
         rdoc_basename = "#{match[:basename].tr('.', '_')}_#{match[:ext]}.html"
@@ -175,10 +223,11 @@ module YARD
     # Resolve RDoc-style filename by basename alone.
     #
     # @param path [String] the RDoc-style HTML filename (e.g., getting-started_md.html)
+    # @param rdoc_basename_to_paths [Hash{String => Array<String>}]
     # @return [String, nil] the resolved path if exactly one match, nil otherwise
-    def resolve_rdoc_by_basename(path)
+    def resolve_rdoc_by_basename(path, rdoc_basename_to_paths)
       basename = File.basename(path)
-      candidates = @rdoc_basename_to_paths[basename]
+      candidates = rdoc_basename_to_paths[basename]
       candidates.first if candidates&.size == 1
     end
 
