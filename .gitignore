@@ -1,0 +1,28 @@
+# Bundler
+/.bundle/
+/vendor/bundle
+
+# Gem build artifacts
+/*.gem
+/pkg/
+
+# Documentation
+/doc/
+/.yardoc/
+
+# Coverage
+/coverage/
+
+# Editor and IDE files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-*
+
+# macOS
+.DS_Store
+
+# Gemfile.lock for gems (libraries should not commit this)
+Gemfile.lock
