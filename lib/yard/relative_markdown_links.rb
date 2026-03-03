@@ -21,7 +21,7 @@ module YARD
   # the link relative to the current file's directory, finding
   # `docs/getting-started.md` in YARD's file list.
   module RelativeMarkdownLinks
-    ANCHOR_TAG_PATTERN = %r{<a\b(?<attributes>[^>]*)>(?<content>.*?)</a>}im.freeze
+    ANCHOR_TAG_PATTERN = %r{<a\b(?<attributes>[^>]*)>(?<content>.*?)</a>}im
     HREF_ATTRIBUTE_PATTERN = /
       \bhref
       \s*=\s*
@@ -32,8 +32,8 @@ module YARD
         |
         (?<bare>[^\s"'=<>`]+)
       )
-    /imx.freeze
-    RDOC_FILENAME_PATTERN = %r{\A(?<dirname>(?:[^/#]*/)*+)(?<basename>[^/#]+)\.(?<ext>rb|rdoc|md)\z}i.freeze
+    /imx
+    RDOC_FILENAME_PATTERN = %r{\A(?<dirname>(?:[^/#]*/)*+)(?<basename>[^/#]+)\.(?<ext>rb|rdoc|md)\z}i
 
     # Resolves relative links from Markdown files.
     #
@@ -195,13 +195,13 @@ module YARD
     # @return [Hash{String => String}] mapping of RDoc HTML names to original filenames
     # @see https://github.com/ruby/rdoc/blob/0e060c69f51ec4a877e5cde69b31d47eaeb2a2b9/lib/rdoc/markup/to_html.rb#L364-L366
     def build_rdoc_filename_mapping(filenames)
-      filenames.filter_map { |filename|
+      filenames.filter_map do |filename|
         match = RDOC_FILENAME_PATTERN.match(filename)
         next unless match
 
         rdoc_name = "#{match[:dirname]}#{match[:basename].tr('.', '_')}_#{match[:ext]}.html"
         [rdoc_name, filename]
-      }.to_h
+      end.to_h
     end
 
     # Build a mapping from RDoc-style basenames to original filenames.

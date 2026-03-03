@@ -1,0 +1,35 @@
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  TargetRubyVersion: 3.1
+  Exclude:
+    - "pkg/**/*"
+    - "vendor/**/*"
+
+Naming/FileName:
+  Exclude:
+    - "lib/yard-relative_markdown_links.rb"
+
+Metrics/ClassLength:
+  Exclude:
+    - "test/**/*_test.rb"
+
+Metrics/ModuleLength:
+  Max: 140
+
+Metrics/MethodLength:
+  Max: 15
+
+Metrics/CyclomaticComplexity:
+  Max: 8
+
+Lint/MissingSuper:
+  Exclude:
+    - "test/**/*_test.rb"
+
+Style/OptionalBooleanParameter:
+  Exclude:
+    - "test/**/*_test.rb"
+
+Style/Documentation:
+  Enabled: false

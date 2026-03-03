@@ -2,6 +2,7 @@
 
 require 'bundler/gem_tasks'
 require 'rake/testtask'
+require 'rubocop/rake_task'
 
 Rake::TestTask.new(:test) do |t|
   t.libs << 'test'
@@ -9,5 +10,9 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList['test/**/*_test.rb']
 end
 
-desc 'Run tests'
-task default: :test
+RuboCop::RakeTask.new(:rubocop) do |task|
+  task.options = ['--cache-root', 'tmp/rubocop_cache']
+end
+
+desc 'Run RuboCop'
+task lint: :rubocop

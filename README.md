@@ -113,6 +113,20 @@ The link in `index.md` would work on GitHub but not in YARD, because the origina
 
 4. **Error handling** — Malformed URIs are gracefully skipped instead of raising exceptions.
 
+## Development
+
+Run tests:
+
+```sh
+bundle exec rake test
+```
+
+Run linting:
+
+```sh
+bundle exec rake lint
+```
+
 ## License
 
 Released under the [MIT License](LICENSE.txt).

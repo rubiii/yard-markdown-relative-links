@@ -12,6 +12,7 @@
 
 # Coverage
 /coverage/
+/tmp/
 
 # Editor and IDE files
 *.swp
