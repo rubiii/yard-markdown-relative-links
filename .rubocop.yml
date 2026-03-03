@@ -8,7 +8,7 @@ AllCops:
 
 Naming/FileName:
   Exclude:
-    - "lib/yard-relative_markdown_links.rb"
+    - "lib/yard-markdown-relative-links.rb"
 
 Metrics/ClassLength:
   Exclude:

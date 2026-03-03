@@ -3,7 +3,7 @@
 require_relative 'lib/yard/relative_markdown_links/version'
 
 Gem::Specification.new do |spec|
-  spec.name = 'yard-relative_markdown_links'
+  spec.name = 'yard-markdown-relative-links'
   spec.version = YARD::RelativeMarkdownLinks::VERSION
   spec.authors = ['Daniel Harrington']
   spec.email = ['me@rubiii.com']
@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
     Supports files in subdirectories by resolving links relative to the current file's location.
     Works seamlessly with GitHub-style relative links while generating correct YARD file references.
   DESC
-  spec.homepage = 'https://github.com/rubiii/yard-relative_markdown_links'
+  spec.homepage = 'https://github.com/rubiii/yard-markdown-relative-links'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.3'
 

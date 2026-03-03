@@ -1,6 +1,6 @@
-# yard-relative_markdown_links
+# yard-markdown-relative-links
 
-[![CI](https://github.com/rubiii/yard-relative_markdown_links/actions/workflows/ci.yml/badge.svg)](https://github.com/rubiii/yard-relative_markdown_links/actions/workflows/ci.yml)
+[![CI](https://github.com/rubiii/yard-markdown-relative-links/actions/workflows/ci.yml/badge.svg)](https://github.com/rubiii/yard-markdown-relative-links/actions/workflows/ci.yml)
 
 A YARD plugin to convert relative links between Markdown files.
 
@@ -21,7 +21,7 @@ With this plugin enabled, you'll get `<a href="file.FOO.html">hello</a>` instead
 Add this line to your application's `Gemfile`:
 
 ```ruby
-gem 'yard-relative_markdown_links'
+gem 'yard-markdown-relative-links'
 ```
 
 And then execute:
@@ -33,7 +33,7 @@ bundle install
 Or install it yourself as:
 
 ```sh
-gem install yard-relative_markdown_links
+gem install yard-markdown-relative-links
 ```
 
 ## Usage
