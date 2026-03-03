@@ -41,8 +41,11 @@ gem install yard-markdown-relative-links
 Add this line to your application's `.yardopts`:
 
 ```
---plugin relative_markdown_links
+--plugin markdown-relative-links
 ```
+
+Important: the YARD plugin key is `markdown-relative-links`.
+Do not use `--plugin relative_markdown_links`, `--plugin yard-relative_markdown_links`, or `--plugin yard-markdown-relative-links`.
 
 You'll also need to make sure your Markdown files are processed by YARD. To include all Markdown files in your project, add the following lines to the end of your application's `.yardopts`:
 
@@ -55,7 +58,7 @@ You'll also need to make sure your Markdown files are processed by YARD. To incl
 
 ```
 --markup markdown
---plugin relative_markdown_links
+--plugin markdown-relative-links
 --readme README.md
 -
 docs/*.md
