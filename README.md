@@ -1,6 +1,6 @@
 # yard-markdown-relative-links
 
-[![CI](https://github.com/rubiii/yard-markdown-relative-links/actions/workflows/ci.yml/badge.svg)](https://github.com/rubiii/yard-markdown-relative-links/actions/workflows/ci.yml)
+[![CI](https://github.com/rubiii/yard-markdown-relative-links/actions/workflows/ci.yml/badge.svg)](https://github.com/rubiii/yard-markdown-relative-links/actions/workflows/ci.yml) [![Gem Version](https://img.shields.io/gem/v/yard-markdown-relative-links)](https://rubygems.org/gems/yard-markdown-relative-links)
 
 A YARD plugin to convert relative links between Markdown files.
 
